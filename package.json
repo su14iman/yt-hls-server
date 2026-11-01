@@ -1,10 +1,10 @@
 {
   "name": "@su14iman/yt-hls-server",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "An Express server that extracts the best HLS (m3u8) stream from a YouTube Live URL using yt-dlp.",
   "main": "index.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "start": "node index.js",

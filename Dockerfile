@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
 
-# Node 20+ on Debian 12. The previous base was node:18-bullseye: Node 18 is
-# end-of-life and bullseye ships Python 3.9, which current yt-dlp no longer
-# supports.
+# Node on Debian 12. The original base was node:18-bullseye, which is both
+# end-of-life and ships Python 3.9 - below the 3.10 that current yt-dlp
+# requires. bookworm avoids that, and the yt-dlp build below needs no
+# system Python at all.
 FROM node:26-bookworm-slim
 
 # Pin the extractor so an image build is reproducible, and so a bump is a

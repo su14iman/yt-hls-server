@@ -336,7 +336,7 @@ src/logger.js       pino setup
 test/               vitest suites; no network or yt-dlp binary required
 ```
 
-## Upgrading from 1.0.x
+## Upgrading from 1.x
 
 Behavioural changes worth knowing about:
 
@@ -356,7 +356,8 @@ Behavioural changes worth knowing about:
   to restore unlimited behaviour.
 - **`yt-dlp-exec` is gone.** `yt-dlp` is now a real binary on `PATH`; set
   `YTDLP_PATH` if yours lives somewhere unusual.
-- **Node 20+ required** (was 18, now end-of-life).
+- **Node 22+ required.** Node 18 and 20 are both end-of-life; the image runs
+  Node 26 (LTS).
 - **YouTube live now plays with audio.** A video-only rendition used to be
   returned, so streams were silent. `/hls_url`, `/hls.json` and
   `/playlist.m3u` now return a `/master.m3u8` URL on this server for
@@ -370,7 +371,7 @@ Behavioural changes worth knowing about:
 
 ## Requirements
 
-- Node.js 20+ (22 recommended)
+- Node.js 22+ (26 recommended, and what the image runs)
 - `yt-dlp` — bundled in the Docker image, no Python needed
 - No `ffmpeg`: this server only resolves manifest URLs, it never transcodes
 
