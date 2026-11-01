@@ -3,7 +3,7 @@
 # Node 20+ on Debian 12. The previous base was node:18-bullseye: Node 18 is
 # end-of-life and bullseye ships Python 3.9, which current yt-dlp no longer
 # supports.
-FROM node:22-bookworm-slim
+FROM node:26-bookworm-slim
 
 # Pin the extractor so an image build is reproducible, and so a bump is a
 # visible one-line change that Renovate/Dependabot can raise a PR for.
