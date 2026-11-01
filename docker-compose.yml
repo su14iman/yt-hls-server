@@ -1,22 +1,96 @@
-version: "3.9"
+# The top-level `version:` key is obsolete in Compose v2 and only produces a
+# warning, so it is gone.
 
 services:
   yt-hls:
-    build: .
+    build:
+      context: .
+      args:
+        # Override to pin a different extractor build.
+        YTDLP_VERSION: "2026.10.26"
+    image: su14iman/yt-hls-server:latest
     container_name: yt-hls
     environment:
-      - PORT=8000
-      - TZ=Europe/Berlin
+      PORT: "8000"
+      TZ: Europe/Berlin
+      LOG_LEVEL: info
+
+      # Comma-separated allowlist of hostnames that may be extracted. This is
+      # what stops the server from being used as an open SSRF proxy. An empty
+      # value disables the check.
+      # ALLOWED_HOSTS: "youtube.com,www.youtube.com,m.youtube.com,youtu.be"
+
+      # Resolved manifests are cached until shortly before the signed URL
+      # expires; this value only applies when a URL carries no deadline.
+      CACHE_TTL_MS: "240000"
+
+      # Caps simultaneous yt-dlp processes; further requests queue, and are
+      # rejected with 503 once the queue is full.
+      YTDLP_CONCURRENCY: "3"
+      YTDLP_QUEUE_LIMIT: "50"
+      YTDLP_TIMEOUT_MS: "25000"
+
+      RATE_LIMIT_WINDOW_MS: "60000"
+      RATE_LIMIT_MAX: "60"
+
+      # Check for a newer yt-dlp on every start. Useful for a long-running
+      # container between image rebuilds; needs a writable binary, so it is
+      # off by default.
+      YTDLP_AUTO_UPDATE: "0"
+
+      # Set when YouTube starts demanding sign-in from this IP.
+      # YTDLP_COOKIES: /run/secrets/cookies.txt
+      # YTDLP_PROXY: socks5://user:pass@host:1080
+      # YTDLP_EXTRACTOR_ARGS: "youtube:player_client=default,web_safari"
+
+      # Require a shared secret on the extraction endpoints.
+      # API_TOKEN: change-me
+
+      # Only enable behind a reverse proxy you control, otherwise clients can
+      # spoof X-Forwarded-For and evade the rate limiter.
+      # TRUST_PROXY: "1"
     ports:
       - "8000:8000"
     restart: unless-stopped
+
+    # volumes:
+    #   - ./cookies.txt:/run/secrets/cookies.txt:ro
+
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8000/"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
+      start_period: 10s
       retries: 3
+
+    # The app itself writes nothing to disk, so the root filesystem is
+    # read-only. yt-dlp is the exception: being a PyInstaller bundle it unpacks
+    # its libraries on every run and maps them executable, so it gets its own
+    # tmpfs mounted "exec" (Docker mounts tmpfs noexec by default, which makes
+    # it fail with "failed to map segment from shared object"). 96m is the
+    # minimum that fits the payload; 256m leaves room for future releases.
+    # /tmp stays noexec because nothing needs to execute from it.
+    read_only: true
+    # A tmpfs mount replaces the directory underneath it, including its
+    # ownership, so uid/gid have to be set here - without them the mount lands
+    # as root:root mode 755 and yt-dlp fails with a misleading
+    # "decompression resulted in return code -1".
+    tmpfs:
+      - /tmp:size=64m
+      - /var/tmp/ytdlp:size=256m,exec,mode=0700,uid=1000,gid=1000
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 512M
+
     logging:
-      driver: "json-file"
+      driver: json-file
       options:
         max-size: "10m"
         max-file: "3"

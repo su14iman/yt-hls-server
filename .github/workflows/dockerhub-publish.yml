@@ -2,8 +2,12 @@ name: Build & Publish to Docker Hub
 
 on:
   push:
-    # branches: ["main"]
+    branches: ["main"]
     tags: ["v*.*.*"]
+  # yt-dlp is pinned in the Dockerfile, but YouTube changes often enough that a
+  # periodic rebuild keeps the published image usable between releases.
+  schedule:
+    - cron: "17 4 * * 1"
   workflow_dispatch:
 
 jobs:
@@ -16,6 +20,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      # Never publish an image whose tests do not pass.
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -34,14 +48,20 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/yt-hls-server
+          # latest=auto tags `latest` on the default branch and on semver tags.
+          flavor: |
+            latest=auto
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha
-            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=sha,format=short
           labels: |
             org.opencontainers.image.title=yt-hls-server
-            org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.description=Extracts the best HLS stream from a YouTube Live URL
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=MIT
 
       - name: Build & push (multi-arch)
         uses: docker/build-push-action@v6
@@ -49,6 +69,7 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
+          provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

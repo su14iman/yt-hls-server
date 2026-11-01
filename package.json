@@ -1,12 +1,29 @@
 {
   "name": "@su14iman/yt-hls-server",
-  "version": "1.0.0",
-  "description": "A simple Express server to fetch YouTube live stream ID using yt-dlp.",
+  "version": "1.1.0",
+  "description": "An Express server that extracts the best HLS (m3u8) stream from a YouTube Live URL using yt-dlp.",
   "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
+  "engines": {
+    "node": ">=20"
   },
-  "keywords": [],
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,json,md,yml}\""
+  },
+  "keywords": [
+    "youtube",
+    "hls",
+    "m3u8",
+    "iptv",
+    "yt-dlp",
+    "live-stream",
+    "express"
+  ],
   "author": "Sulaiman Sulaiman <s.su14iman@gmail.com>",
   "repository": {
     "type": "git",
@@ -15,7 +32,15 @@
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
-    "express": "^5.1.0",
-    "yt-dlp-exec": "^1.0.2"
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.2",
+    "pino": "^10.4.0",
+    "pino-http": "^11.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^10.14.0",
+    "prettier": "^3.9.10",
+    "supertest": "^7.3.1",
+    "vitest": "^5.0.5"
   }
 }
